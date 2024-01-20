@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.kafka.retrytopic.RetryTopicHeaders;
 import org.springframework.kafka.retrytopic.TopicSuffixingStrategy;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -40,18 +41,19 @@ public class ResilienceKafkaListener {
             containerFactory = "kafkaResilienceListenerContainerFactory")
     public void listener(
             @Header(KafkaHeaders.RECEIVED_TOPIC) String receivedTopic, // Topic name, only needed to check the attempt number
+            @Header(value = RetryTopicHeaders.DEFAULT_HEADER_ATTEMPTS, required = false, defaultValue = "0") Integer attempt,
             ConsumerRecord<String, String> recordMessage,
             Acknowledgment ack) { // The acknowledgment needed for commit an event and avoid the retry process
-        log.info("Received an event with content {} in topic {}", recordMessage.value(), receivedTopic);
+        log.info("Received an event with content {} in topic {} with attempt {}", recordMessage.value(), receivedTopic, attempt);
 
-        if (receivedTopic.endsWith("0")) {
-            log.info("Processing message for second time");
-        } else if (receivedTopic.endsWith("1")) {
-            log.info("Processing message for third time");
-        } else if (receivedTopic.endsWith("2")) {
-            log.info("Processing message for forth time");
-        } else {
+        if (attempt.equals(0)) {
             log.info("Processing message for first time");
+        } else if (attempt.equals(1)) {
+            log.info("Processing message for second time");
+        } else if (attempt.equals(2)) {
+            log.info("Processing message for third time");
+        } else {
+            log.info("Processing message for forth & last time");
         }
 
         if ("OK".equalsIgnoreCase(recordMessage.value())) {
@@ -73,8 +75,10 @@ public class ResilienceKafkaListener {
         This function must be placed in the same class as the listener.
     */
     @DltHandler
-    public void process(String message, Acknowledgment ack) {
-        log.error("DltHandler processing with content {}", message);
+    public void deadLetterProcessor(@Header(KafkaHeaders.EXCEPTION_MESSAGE) String error, // Message from the exception witch made the event fail
+                                    String message,
+                                    Acknowledgment ack) {
+        log.error("DltHandler processing with content {} with error {}", message, error);
         ack.acknowledge();
     }
 

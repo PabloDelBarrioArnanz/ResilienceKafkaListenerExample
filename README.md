@@ -1,3 +1,3 @@
 # ResilienceKafkaListenerExample
 
-### An implementation of a resilient Kafka listener
+### An implementation of a non-blocking resilient Kafka listener
