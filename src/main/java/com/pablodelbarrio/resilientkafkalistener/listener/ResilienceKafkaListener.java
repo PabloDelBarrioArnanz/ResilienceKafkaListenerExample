@@ -5,13 +5,15 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.RetryableTopic;
-import org.springframework.kafka.retrytopic.RetryTopicHeaders;
 import org.springframework.kafka.retrytopic.TopicSuffixingStrategy;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
+
+import static org.springframework.kafka.retrytopic.RetryTopicHeaders.DEFAULT_HEADER_ATTEMPTS;
+import static org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC;
 
 
 @Slf4j
@@ -40,17 +42,19 @@ public class ResilienceKafkaListener {
             topics = "origin-topic",
             containerFactory = "kafkaResilienceListenerContainerFactory")
     public void listener(
-            @Header(KafkaHeaders.RECEIVED_TOPIC) String receivedTopic, // Topic name, only needed to check the attempt number
-            @Header(value = RetryTopicHeaders.DEFAULT_HEADER_ATTEMPTS, required = false, defaultValue = "0") Integer attempt,
+            @Header(RECEIVED_TOPIC) String receivedTopic, // Topic name, only needed to check the attempt number
+            @Header(value = DEFAULT_HEADER_ATTEMPTS, required = false, defaultValue = "1") Integer attempt,
+            @Header(value = "HEADER_CUSTOM_ERROR", required = false) String error,
             ConsumerRecord<String, String> recordMessage,
             Acknowledgment ack) { // The acknowledgment needed for commit an event and avoid the retry process
-        log.info("Received an event with content {} in topic {} with attempt {}", recordMessage.value(), receivedTopic, attempt);
+        log.info("Received an event with content {} in topic {} with attempt {} with error {}",
+                recordMessage.value(), receivedTopic, attempt, error);
 
-        if (attempt.equals(0)) {
+        if (attempt.equals(1)) {
             log.info("Processing message for first time");
-        } else if (attempt.equals(1)) {
-            log.info("Processing message for second time");
         } else if (attempt.equals(2)) {
+            log.info("Processing message for second time");
+        } else if (attempt.equals(3)) {
             log.info("Processing message for third time");
         } else {
             log.info("Processing message for forth & last time");

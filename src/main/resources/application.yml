@@ -1,3 +1,11 @@
 
 # No kafka config set, all config it's the default one except de/serializers & the connection
 # witch it's configured in KafkaConfig java file
+
+logging:
+  level:
+    org:
+      springframework:
+        kafka: error
+      apache:
+        kafka: error
