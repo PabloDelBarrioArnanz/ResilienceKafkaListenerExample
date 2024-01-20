@@ -48,7 +48,6 @@ public class ResilienceKafkaListener {
             log.info("Processing message for second time");
         } else if (receivedTopic.endsWith("1")) {
             log.info("Processing message for third time");
-            ack.acknowledge();
         } else if (receivedTopic.endsWith("2")) {
             log.info("Processing message for forth time");
         } else {
