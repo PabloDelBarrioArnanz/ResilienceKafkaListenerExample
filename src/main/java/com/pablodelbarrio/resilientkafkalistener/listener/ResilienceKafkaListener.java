@@ -42,9 +42,9 @@ public class ResilienceKafkaListener {
             topics = "origin-topic",
             containerFactory = "kafkaResilienceListenerContainerFactory")
     public void listener(
-            @Header(RECEIVED_TOPIC) String receivedTopic, // Topic name, only needed to check the attempt number
-            @Header(value = DEFAULT_HEADER_ATTEMPTS, required = false, defaultValue = "1") Integer attempt,
-            @Header(value = "HEADER_CUSTOM_ERROR", required = false) String error,
+            @Header(RECEIVED_TOPIC) String receivedTopic, // Topic name (not necessary)
+            @Header(value = DEFAULT_HEADER_ATTEMPTS, required = false, defaultValue = "1") Integer attempt, // Just to know if it's a reprocess (attempt > 1)
+            @Header(value = "HEADER_CUSTOM_ERROR", required = false) String error, // Custom header with the message from the exception witch made the event fail (see CustomRetryTopicConfigurationSupport)
             ConsumerRecord<String, String> recordMessage,
             Acknowledgment ack) { // The acknowledgment needed for commit an event and avoid the retry process
         log.info("Received an event with content {} in topic {} with attempt {} with error {}",

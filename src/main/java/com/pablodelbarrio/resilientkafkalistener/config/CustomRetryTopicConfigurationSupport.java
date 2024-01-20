@@ -9,6 +9,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/*
+    Class it's not necessary to implement
+    It's overriding the headers copy process to add a custom one with the error
+*/
+
 @EnableScheduling
 @Configuration
 public class CustomRetryTopicConfigurationSupport extends RetryTopicConfigurationSupport {
