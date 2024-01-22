@@ -12,7 +12,10 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 import static org.springframework.kafka.retrytopic.RetryTopicHeaders.DEFAULT_HEADER_ATTEMPTS;
+import static org.springframework.kafka.support.KafkaHeaders.EXCEPTION_MESSAGE;
 import static org.springframework.kafka.support.KafkaHeaders.RECEIVED_TOPIC;
 
 
@@ -44,7 +47,7 @@ public class ResilienceKafkaListener {
     public void listener(
             @Header(RECEIVED_TOPIC) String receivedTopic, // Topic name (not necessary)
             @Header(value = DEFAULT_HEADER_ATTEMPTS, required = false, defaultValue = "1") Integer attempt, // Just to know if it's a reprocess (attempt > 1)
-            @Header(value = "HEADER_CUSTOM_ERROR", required = false) String error, // Custom header with the message from the exception witch made the event fail (see CustomRetryTopicConfigurationSupport)
+            @Header(value = EXCEPTION_MESSAGE, required = false) String error, //  Header with the message from the exception witch made the event fail (see CustomRetryTopicConfigurationSupport)
             ConsumerRecord<String, String> recordMessage,
             Acknowledgment ack) { // The acknowledgment needed for commit an event and avoid the retry process
         log.info("Received an event with content {} in topic {} with attempt {} with error {}",
@@ -67,7 +70,7 @@ public class ResilienceKafkaListener {
                 When an exception it's thrown in the processing,
                 the Retryable process will resend the event to the corresponding retry-topic determinate with the attempts done
             */
-            throw new RuntimeException("Fail reading message");
+            throw new RuntimeException(String.format("Fail reading message at %s", LocalDateTime.now()));
         }
     }
 
